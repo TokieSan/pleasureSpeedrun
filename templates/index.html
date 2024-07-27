@@ -3,30 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pleasures Tracker</title>
+    <title>Pleasures Speedrun Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <style>
-        .pleasure-item {
-            margin-bottom: 20px;
+        .pleasure-card {
+            transition: transform 0.3s ease-in-out;
+        }
+        .pleasure-card:hover {
+            transform: scale(1.05);
         }
     </style>
 </head>
-<body>
-    <h1>Pleasures Tracker</h1>
-    <form method="POST">
-        {% for pleasure, description in pleasures %}
-        <div class="pleasure-item">
-            <h3>{{ pleasure }}</h3>
-            <p> {{ description }}</p>
-            <label>
-                <input type="checkbox" name="{{ pleasure }}_fulfilled"> Made it?
-            </label>
-            <br>
-            <label>
-                Comment: <textarea name="{{ pleasure }}_comment" rows="2" cols="50"></textarea>
-            </label>
+<body class="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 min-h-screen flex items-center justify-center">
+    <div id="app" class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-2xl">
+        <h1 class="text-4xl font-bold text-center mb-8 text-gray-800">Pleasures Tracker</h1>
+        <div id="pleasure-container" class="mb-8">
+            <div id="pleasure-card" class="pleasure-card bg-gradient-to-r from-blue-200 to-blue-100 p-6 rounded-lg shadow-md">
+                <h2 id="pleasure-name" class="text-2xl font-semibold mb-2 text-gray-800"></h2>
+                <p id="pleasure-description" class="text-gray-600 mb-4"></p>
+                <div class="flex items-center mb-4">
+                    <input type="checkbox" id="fulfilled" class="mr-2 h-5 w-5 text-blue-600">
+                    <label for="fulfilled" class="text-gray-700">Made it?</label>
+                </div>
+                <textarea id="comment" rows="3" class="w-full p-2 border border-gray-300 rounded" placeholder="Add a comment..."></textarea>
+            </div>
         </div>
-        {% endfor %}
-        <button type="submit">Submit</button>
-    </form>
+        <div class="flex justify-between items-center mb-4">
+            <button id="prev-btn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l">
+                Previous
+            </button>
+            <span id="progress-text" class="text-gray-600"></span>
+            <button id="next-btn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-r">
+                Next
+            </button>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mb-4">
+            <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+        </div>
+        <div class="text-center">
+            <button id="submit-now-btn" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                Submit Now
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let currentIndex = 0;
+        let pleasures = [];
+        let totalPleasures = 0;
+
+        function loadPleasure(index) {
+            fetch(`/get_pleasure/${index}`)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('pleasure-name').textContent = data.name;
+                    document.getElementById('pleasure-description').textContent = data.description;
+                    document.getElementById('fulfilled').checked = pleasures[index] ? pleasures[index].fulfilled : false;
+                    document.getElementById('comment').value = pleasures[index] ? pleasures[index].comment : '';
+                    
+                    totalPleasures = data.total;
+                    const progressText = `${index + 1} / ${totalPleasures}`;
+                    document.getElementById('progress-text').textContent = progressText;
+                    
+                    const progressPercentage = ((index + 1) / totalPleasures) * 100;
+                    document.getElementById('progress-bar').style.width = `${progressPercentage}%`;
+                    
+                    document.getElementById('prev-btn').disabled = index === 0;
+                    document.getElementById('next-btn').textContent = index === totalPleasures - 1 ? 'Submit' : 'Next';
+                });
+        }
+
+        document.getElementById('prev-btn').addEventListener('click', () => {
+            if (currentIndex > 0) {
+                savePleasure();
+                currentIndex--;
+                loadPleasure(currentIndex);
+            }
+        });
+
+        document.getElementById('next-btn').addEventListener('click', () => {
+            savePleasure();
+            
+            if (currentIndex < totalPleasures - 1) {
+                currentIndex++;
+                loadPleasure(currentIndex);
+            } else {
+                submitPleasures();
+            }
+        });
+
+        document.getElementById('submit-now-btn').addEventListener('click', () => {
+            savePleasure();
+            submitPleasures();
+        });
+
+        function savePleasure() {
+            const name = document.getElementById('pleasure-name').textContent;
+            const fulfilled = document.getElementById('fulfilled').checked;
+            const comment = document.getElementById('comment').value;
+            
+            pleasures[currentIndex] = { name, fulfilled, comment };
+        }
+
+        function submitPleasures() {
+            // Filter out any undefined entries (questions not viewed)
+            const completedPleasures = pleasures.filter(p => p !== undefined);
+            
+            fetch('/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(completedPleasures),
+            })
+            .then(response => response.json())
+            .then(data => {
+                window.location.href = `/results/${data.total_score}`;
+            });
+        }
+
+        loadPleasure(currentIndex);
+    </script>
 </body>
 </html>

@@ -3,11 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Results</title>
+    <title>Results - Pleasures Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 </head>
-<body>
-    <h1>Results</h1>
-    <p>Total Pleasures Fulfilled: {{ total_score }}</p>
-    <p><a href="/">Back to Homepage</a></p>
+<body class="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 min-h-screen flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md text-center">
+        <h1 class="text-4xl font-bold mb-6 text-gray-800">Results</h1>
+        <p class="text-2xl mb-8 text-gray-600">Total Pleasures Fulfilled: <span class="font-bold text-blue-600">{{ total_score }}</span></p>
+        <div class="mb-8">
+            <div class="w-full bg-gray-200 rounded-full h-4">
+                <div class="bg-blue-600 h-4 rounded-full" style="width: {{ (total_score / 2) * 100 }}%"></div>
+            </div>
+        </div>
+        <div class="flex flex-col space-y-4">
+            <a href="/" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                Start Over
+            </a>
+            <a href="/download_results" class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 ease-in-out transform hover:scale-105">
+                Download Results
+            </a>
+        </div>
+    </div>
 </body>
 </html>
